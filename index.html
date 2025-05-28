@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" type="image/png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@preline/preline@2.0.0/dist/preline.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    };
+
+    function toggleDarkMode() {
+      const isDarkMode = document.body.classList.toggle('dark');
+      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+      }
+    });
+  </script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <div class="hidden md:flex flex-col w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h1 class="text-xl font-bold text-gray-800 dark:text-white">AI Chat</h1>
+        <button id="new-chat" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto">
+        <div id="chat-history" class="p-2 space-y-1"></div>
+      </div>
+      <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+            <i class="fas fa-user"></i>
+          </div>
+          <button id="user-status" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:underline">User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main chat area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <button id="sidebar-toggle" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h2 class="text-lg font-semibold text-gray-800 dark:text-white" id="current-chat-title">New Chat</h2>
+        </div>
+        <div class="relative">
+          <button id="mode-menu-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <i class="fas fa-ellipsis-vertical"></i>
+          </button>
+          <div id="mode-menu" class="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-lg rounded-lg hidden">
+            <button id="roast-mode" class="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Roast Mode</button>
+            <button id="math-mode" class="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Math Mode</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+        <div class="max-w-3xl mx-auto fade-in">
+          <div class="flex space-x-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                <p class="text-gray-800 dark:text-gray-200">
+                  Hello! I'm your AI assistant. How can I help you today? If you need help with math please select Math Mode. If you want me to Roast you select Roast Mode.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <form id="message-form" class="max-w-3xl mx-auto">
+          <div class="relative">
+            <textarea id="message-input" rows="1" class="w-full p-4 pr-16 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" placeholder="Type your message..." required></textarea>
+            <button type="submit" class="absolute right-2 bottom-2 p-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+        <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">AI may produce inaccurate information. Consider checking important information.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dark Mode Toggle Button -->
+  <button id="dark-mode-toggle" class="fixed bottom-4 right-4 p-3 rounded-full bg-primary-500 text-white hover:bg-primary-600 transition-colors">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <!-- Login/Register Modal -->
+  <div id="auth-panel" class="fixed inset-0 bg-gray-100 dark:bg-gray-900 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-sm p-6 space-y-4">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-white text-center">Sign In</h2>
+      <input id="auth-email" type="email" placeholder="Email" class="w-full p-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white">
+      <input id="auth-password" type="password" placeholder="Password" class="w-full p-3 rounded border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white">
+      <div class="flex justify-between">
+        <button id="auth-login" class="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600">Login</button>
+        <button id="auth-register" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Register</button>
+      </div>
+      <p id="auth-message" class="text-sm text-center text-gray-600 dark:text-gray-300"></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const modeMenuToggle = document.getElementById('mode-menu-toggle');
+      const modeMenu = document.getElementById('mode-menu');
+      const roastModeButton = document.getElementById('roast-mode');
+      const mathModeButton = document.getElementById('math-mode');
+      const messageInput = document.getElementById('message-input');
+      const messagesContainer = document.getElementById('messages');
+      const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+      let currentMode = 'default';
+
+      const roastResponses = [
+        "You're like a cloud. When you disappear, it’s a beautiful day.",
+        "You're not dumb. You just have bad luck thinking.",
+        "You're the reason the gene pool needs a lifeguard.",
+        "You're as sharp as a spoon in a blender.",
+        "You bring everyone so much joy… when you leave the room.",
+        "You're the human version of a typo.",
+        "Your secrets are safe with me. I never even listen.",
+        "You're like a software bug — always showing up uninvited."
+      ];
+
+      darkModeToggle.addEventListener('click', toggleDarkMode);
+      modeMenuToggle.addEventListener('click', () => {
+        modeMenu.classList.toggle('hidden');
+      });
+
+      roastModeButton.addEventListener('click', () => {
+        currentMode = 'roast';
+        modeMenu.classList.add('hidden');
+        displayMessage("🔥 Roast Mode activated! Prepare for some burns.");
+      });
+
+      mathModeButton.addEventListener('click', () => {
+        currentMode = 'math';
+        modeMenu.classList.add('hidden');
+        displayMessage("📐 Math Mode activated! Ready to solve equations.");
+      });
+
+      document.getElementById('message-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const userMessage = messageInput.value.trim();
+        if (userMessage) {
+          displayMessage(userMessage, 'user');
+          respondBasedOnMode(userMessage);
+        }
+        messageInput.value = '';
+      });
+
+      function displayMessage(message, sender = 'ai') {
+        const div = document.createElement('div');
+        div.classList.add('flex', 'space-x-3', sender === 'user' ? 'justify-end' : 'justify-start');
+        div.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+              <i class="fas fa-${sender === 'user' ? 'user' : 'robot'}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+              <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                  <p class="text-gray-800 dark:text-gray-200">${message}</p>
+              </div>
+          </div>
+        `;
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function respondBasedOnMode(userMessage) {
+        let aiMessage = '';
+        if (currentMode === 'roast') {
+          aiMessage = roastResponses[Math.floor(Math.random() * roastResponses.length)];
+        } else if (currentMode === 'math') {
+          try {
+            aiMessage = `🧮 ${userMessage} = ${eval(userMessage)}`;
+          } catch {
+            aiMessage = "❌ That doesn't look like a valid math expression.";
+          }
+        } else {
+          aiMessage = "I'm here to help! What can I assist you with?";
+        }
+        displayMessage(aiMessage);
+      }
+
+      // --- Auth ---
+      const authPanel = document.getElementById('auth-panel');
+      const userStatus = document.getElementById('user-status');
+      const authEmail = document.getElementById('auth-email');
+      const authPassword = document.getElementById('auth-password');
+      const authMessage = document.getElementById('auth-message');
+      const chatApp = document.querySelector('body > .flex');
+
+      function updateUserStatusDisplay(name) {
+        userStatus.textContent = name;
+      }
+
+      userStatus.addEventListener('click', () => {
+        chatApp.classList.add('hidden');
+        authPanel.classList.remove('hidden');
+      });
+
+      document.getElementById('auth-login').addEventListener('click', () => {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
+        const saved = JSON.parse(localStorage.getItem(email));
+
+        if (saved && saved.password === password) {
+          localStorage.setItem('loggedInUser', email);
+          updateUserStatusDisplay(email.split('@')[0]);
+          closeAuthPanel();
+        } else {
+          authMessage.textContent = 'Invalid credentials.';
+        }
+      });
+
+      document.getElementById('auth-register').addEventListener('click', () => {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
+
+        if (localStorage.getItem(email)) {
+          authMessage.textContent = 'Email already registered.';
+        } else {
+          localStorage.setItem(email, JSON.stringify({ password }));
+          authMessage.textContent = 'Registration successful. You can now log in.';
+        }
+      });
+
+      function closeAuthPanel() {
+        authPanel.classList.add('hidden');
+        chatApp.classList.remove('hidden');
+        authEmail.value = '';
+        authPassword.value = '';
+        authMessage.textContent = '';
+      }
+
+      const loggedInUser = localStorage.getItem('loggedInUser');
+      if (loggedInUser) {
+        updateUserStatusDisplay(loggedInUser.split('@')[0]);
+      }
+    });
+  </script>
+</body>
+</html>
